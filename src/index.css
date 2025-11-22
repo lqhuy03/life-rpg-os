@@ -19,3 +19,21 @@ body {
 .glass-btn {
   @apply bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 hover:border-emerald-500/50 transition-all active:scale-95;
 }
+
+/* --- TỐI ƯU MOBILE --- */
+
+/* Ẩn thanh cuộn cho Chrome, Safari, Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ẩn thanh cuộn cho IE, Edge, Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Chặn kéo trang web xuống (Pull-to-refresh) để cảm giác giống App hơn */
+body {
+  overscroll-behavior-y: none;
+}

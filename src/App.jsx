@@ -11,21 +11,27 @@ import Dashboard from './features/Dashboard';
 import QuestBoard from './features/QuestBoard';
 import Shop from './features/Shop';
 import Inventory from './features/Inventory'; 
+import Profile from './features/Profile';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, setUser, loadGameData, isLoading } = useGameStore();
+  const { user, setUser, loadGameData, isLoading, checkDailyReset } = useGameStore(); // <--- Lấy thêm hàm checkDailyReset
 
   useEffect(() => {
-    // Kiểm tra session đăng nhập
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadGameData(session.user.id);
-    });
+    // 1. Lắng nghe Auth
+    const initData = async (session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+            await loadGameData(session.user.id);
+            // 2. Sau khi load xong thì check reset ngay
+            checkDailyReset(); 
+        }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => initData(session));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadGameData(session.user.id);
+        initData(session);
     });
 
     return () => subscription.unsubscribe();
@@ -47,12 +53,13 @@ function App() {
       
       <div className="flex-1 flex flex-col h-screen relative">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-10 scroll-smooth">
+       <main className="flex-1 overflow-y-auto no-scrollbar p-4 md:p-8 pb-32 md:pb-10 scroll-smooth">
           <div className="max-w-4xl mx-auto">
              {activeTab === 'dashboard' && <Dashboard />}
              {activeTab === 'quests' && <QuestBoard />}
              {activeTab === 'shop' && <Shop />}
              {activeTab === 'inventory' && <Inventory />}
+             {activeTab === 'profile' && <Profile />}
           </div>
         </main>
       </div>

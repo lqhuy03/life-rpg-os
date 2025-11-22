@@ -21,8 +21,8 @@ const Shop = () => {
         <h3 className="text-2xl font-bold text-white flex items-center gap-2">
             <ShoppingCart className="text-yellow-400"/> Cửa Hàng
         </h3>
-        <button onClick={() => setIsAdding(!isAdding)} className="btn-glass text-sm text-emerald-400 border-emerald-500/30">
-            <Plus size={16} /> Tạo Phần Thưởng
+        <button onClick={() => setIsAdding(!isAdding)} className="...">
+            + Tạo Phần Thưởng
         </button>
       </div>
 

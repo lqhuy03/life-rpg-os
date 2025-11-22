@@ -1,6 +1,7 @@
 import React from 'react';
 import { LayoutDashboard, ScrollText, ShoppingBag, LogOut, Package } from 'lucide-react';
 import { supabase } from '../config/supabaseClient';
+import { User } from 'lucide-react';
 
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const menu = [
@@ -8,6 +9,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
     { id: 'quests', label: 'Nhiệm vụ', icon: ScrollText },
     { id: 'shop', label: 'Cửa hàng', icon: ShoppingBag },
     { id: 'inventory', label: 'Túi đồ', icon: Package },
+    { id: 'profile', label: 'Hồ sơ', icon: User },
   ];
 
   return (
