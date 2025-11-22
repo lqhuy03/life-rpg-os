@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { Toaster } from 'sonner';
 import { supabase } from './config/supabaseClient';
 import useGameStore from './store/gameStore';
+
+// Components
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import Auth from './components/Auth';
 import Dashboard from './features/Dashboard';
 import QuestBoard from './features/QuestBoard';
 import Shop from './features/Shop';
+import Inventory from './features/Inventory'; 
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -37,7 +41,10 @@ function App() {
 
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans overflow-hidden selection:bg-emerald-500/30">
+      <Toaster position="top-center" theme="dark" richColors />
+      
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
       <div className="flex-1 flex flex-col h-screen relative">
         <Header />
         <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-10 scroll-smooth">
@@ -45,6 +52,7 @@ function App() {
              {activeTab === 'dashboard' && <Dashboard />}
              {activeTab === 'quests' && <QuestBoard />}
              {activeTab === 'shop' && <Shop />}
+             {activeTab === 'inventory' && <Inventory />}
           </div>
         </main>
       </div>

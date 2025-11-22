@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Coins, Heart } from 'lucide-react';
+import { Coins, Trophy, Heart, Zap } from 'lucide-react';
 import useGameStore from '../store/gameStore';
 
 const Header = () => {
@@ -8,36 +8,57 @@ const Header = () => {
   const hpPercent = (character.hp / character.maxHp) * 100;
 
   return (
-    <header className="bg-slate-900/80 backdrop-blur border-b border-slate-800 p-4 sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center font-bold text-white border border-emerald-400 shadow-lg shadow-emerald-500/20">
-            {character.level}
+    <header className="glass-panel border-x-0 border-t-0 p-4 sticky top-0 z-40 mb-6">
+      <div className="max-w-5xl mx-auto flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+        
+        {/* User Info */}
+        <div className="flex items-center gap-4">
+          <div className="relative">
+             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-cyan-600 flex items-center justify-center font-black text-xl text-white border-2 border-white/10 shadow-lg shadow-emerald-500/30">
+                {character.level}
+             </div>
+             <div className="absolute -bottom-1 -right-1 bg-slate-900 rounded-full p-0.5 border border-slate-700">
+                <Trophy size={12} className="text-yellow-400" />
+             </div>
           </div>
           <div>
-            <h2 className="font-bold text-slate-100">{character.name}</h2>
-            <span className="text-xs text-emerald-400 font-mono">LVL {character.level} HERO</span>
+            <h2 className="font-bold text-lg text-white tracking-tight">{character.name}</h2>
+            <div className="flex items-center gap-2">
+                <span className="text-xs font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">HERO</span>
+                <span className="text-xs text-slate-400">LVL {character.level}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 md:max-w-md flex flex-col gap-2">
-           {/* HP Bar */}
-           <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden relative">
-              <div className="absolute h-full bg-red-500 transition-all duration-500" style={{ width: `${hpPercent}%` }} />
+        {/* Stats Bars */}
+        <div className="flex-1 md:max-w-md flex flex-col gap-3">
+           {/* HP Bar (Rose Color) */}
+           <div className="relative group">
+              <div className="flex justify-between text-[10px] font-bold mb-1 px-1">
+                 <span className="text-rose-400 flex items-center gap-1"><Heart size={10} fill="currentColor"/> HP</span>
+                 <span className="text-slate-400">{character.hp}/{character.maxHp}</span>
+              </div>
+              <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
+                 <div className="absolute h-full bg-rose-500 shadow-[0_0_10px_#f43f5e] transition-all duration-700 ease-out" style={{ width: `${hpPercent}%` }} />
+              </div>
            </div>
-           {/* XP Bar */}
-           <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden relative">
-              <div className="absolute h-full bg-yellow-400 transition-all duration-500" style={{ width: `${xpPercent}%` }} />
-           </div>
-           <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-              <span>HP {character.hp}/{character.maxHp}</span>
-              <span>XP {character.xp}/{character.maxXp}</span>
+
+           {/* XP Bar (Emerald Color) */}
+           <div className="relative group">
+               <div className="flex justify-between text-[10px] font-bold mb-1 px-1">
+                 <span className="text-emerald-400 flex items-center gap-1"><Zap size={10} fill="currentColor"/> XP</span>
+                 <span className="text-slate-400">{character.xp}/{character.maxXp}</span>
+              </div>
+              <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-inner relative">
+                 <div className="absolute h-full bg-emerald-500 shadow-[0_0_10px_#10b981] transition-all duration-700 ease-out" style={{ width: `${xpPercent}%` }} />
+              </div>
            </div>
         </div>
 
-        <div className="absolute top-4 right-4 md:static bg-slate-950 border border-yellow-500/30 px-3 py-1 rounded-full flex items-center gap-2">
-          <Coins size={16} className="text-yellow-500" />
-          <span className="text-yellow-400 font-bold">{character.gold}</span>
+        {/* Gold (Yellow Color) */}
+        <div className="absolute top-4 right-4 md:static glass-panel px-4 py-2 rounded-full flex items-center gap-2 border-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+          <Coins size={20} className="text-yellow-400 drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]" />
+          <span className="text-xl font-black text-yellow-400 font-mono tracking-wide">{character.gold}</span>
         </div>
       </div>
     </header>

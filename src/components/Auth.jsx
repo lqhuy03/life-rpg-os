@@ -10,7 +10,18 @@ const Auth = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    
+    // SỬA ĐOẠN NÀY
+    const { error } = await supabase.auth.signInWithOtp({ 
+      email,
+      options: {
+        // window.location.origin sẽ tự động lấy:
+        // - Là "http://localhost:5173" nếu bạn đang chạy Local
+        // - Là "https://life-rpg-os.vercel.app" nếu bạn đang chạy trên Vercel
+        emailRedirectTo: window.location.origin 
+      }
+    });
+
     if (error) alert(error.message);
     else setSent(true);
     setLoading(false);

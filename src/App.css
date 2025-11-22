@@ -1,42 +1,49 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- CẤU HÌNH MÀU SẮC TOÀN CỤC --- */
+body {
+  /* Nền tối thẳm (Deep Space) */
+  @apply bg-slate-950 text-slate-100;
+  
+  /* Hiệu ứng nền Gradient Neon tinh tế (Không bị rối mắt) */
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 60%), /* Ánh xanh Emerald ở trên */
+    radial-gradient(circle at 0% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),  /* Ánh tím Violet ở trái */
+    radial-gradient(circle at 100% 50%, rgba(14, 165, 233, 0.1) 0%, transparent 50%); /* Ánh xanh Cyan ở phải */
+  background-attachment: fixed;
+  min-height: 100vh;
+  font-feature-settings: "cv11", "ss01"; /* Font chữ hiển thị số đẹp hơn */
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* --- CÁC CLASS TIỆN ÍCH (UTILITIES) --- */
+
+/* 1. Panel Kính mờ (Dùng cho Card, Sidebar) */
+.glass-panel {
+  @apply bg-slate-900/70 backdrop-blur-md border border-slate-700/50 shadow-xl;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* 2. Nút bấm chính (Primary Button - Emerald) */
+.btn-primary {
+  @apply bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-xl 
+  shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)] 
+  transition-all active:scale-95 border border-emerald-500/50;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* 3. Nút bấm phụ (Secondary - Glass) */
+.btn-glass {
+  @apply bg-slate-800/50 hover:bg-slate-700/80 text-slate-200 font-medium py-2 px-4 rounded-xl
+  border border-slate-600/50 hover:border-slate-500 transition-all active:scale-95;
 }
 
-.card {
-  padding: 2em;
+/* 4. Text Gradient (Dùng cho Tiêu đề lớn) */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 via-cyan-400 to-purple-400;
 }
 
-.read-the-docs {
-  color: #888;
-}
+/* 5. Thanh cuộn đẹp (Scrollbar) */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { @apply bg-slate-700 rounded-full; }
+::-webkit-scrollbar-thumb:hover { @apply bg-slate-600; }

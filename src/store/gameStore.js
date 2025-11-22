@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../config/supabaseClient';
+import { toast } from 'sonner'; // Import toast
 
 // Giá trị mặc định cho người chơi mới
 const INITIAL_STATE = {
@@ -8,6 +9,8 @@ const INITIAL_STATE = {
     level: 1, xp: 0, maxXp: 1000, hp: 100, maxHp: 100, gold: 0,
     stats: { health: 50, wisdom: 50, wealth: 50, social: 50, career: 50, spirit: 50 }
   },
+  inventory: [], // <--- MỚI: Túi đồ
+  history: [],   // <--- MỚI: Lịch sử
   quests: [],
   shopItems: []
 };
@@ -134,16 +137,42 @@ const useGameStore = create((set, get) => ({
     get().syncToCloud();
   },
 
+  // ACTION MỚI: Mua hàng (Chuyển vào túi đồ)
   buyItem: (id) => {
     const state = get();
     const item = state.shopItems.find(i => i.id === id);
     
     if (item && state.character.gold >= item.cost) {
-      set({ character: { ...state.character, gold: state.character.gold - item.cost } });
-      alert(`Đã đổi thưởng: ${item.title}`);
+      const newItem = { ...item, id: Date.now(), originalId: item.id }; // Tạo ID mới cho vật phẩm trong túi
+      
+      set({ 
+        character: { ...state.character, gold: state.character.gold - item.cost },
+        inventory: [...(state.inventory || []), newItem], // Thêm vào túi
+        history: [{ action: `Đã mua ${item.title}`, date: new Date() }, ...state.history]
+      });
+      
+      toast.success(`Đã mua: ${item.title}`); // Thông báo đẹp
       get().syncToCloud();
     } else {
-      alert("Không đủ Gold!");
+      toast.error("Không đủ Gold!");
+    }
+  },
+
+  // ACTION MỚI: Sử dụng vật phẩm
+  useItem: (inventoryId) => {
+    const state = get();
+    const item = state.inventory.find(i => i.id === inventoryId);
+    
+    if (item) {
+        // Xóa khỏi túi đồ
+        const newInventory = state.inventory.filter(i => i.id !== inventoryId);
+        
+        set({
+            inventory: newInventory,
+            history: [{ action: `Đã dùng ${item.title}`, date: new Date() }, ...state.history]
+        });
+        toast.info(`Đã sử dụng: ${item.title}. Hãy tận hưởng!`);
+        get().syncToCloud();
     }
   },
   
