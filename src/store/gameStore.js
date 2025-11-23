@@ -81,44 +81,56 @@ const useGameStore = create((set, get) => ({
   loadGameData: async (userId) => {
     set({ isLoading: true });
     try {
-      // A. Tải Profile
-      let { data: profile } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+      // 1. Cố gắng lấy Profile hiện có
+      let { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-      // Nếu chưa có Profile -> Tạo mới (Onboarding)
+      if (fetchError) throw fetchError;
+
+      // 2. Nếu chưa có -> Tạo mới
       if (!profile) {
         const { data: { user } } = await supabase.auth.getUser();
-        const name = user?.user_metadata?.full_name || "Hero";
-        const role = user?.email === 'huy30987@gmail.com' ? 'admin' : 'user'; // <--- Set Admin ở đây
+        const registeredName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Hero";
+        // Logic Admin
+        const role = user?.email === 'huy30987@gmail.com' ? 'admin' : 'user';
 
-        const newProfile = { id: userId, username: name, role, ...INITIAL_CHAR };
-        // Xóa stats khỏi object spread vì nó đã có trong INITIAL_CHAR nhưng DB cần format jsonb
-        // Supabase tự xử lý JSONB convert
+        const newProfile = { 
+            id: userId, 
+            username: registeredName, 
+            role, 
+            stats: INITIAL_STATE.character.stats, // Dùng stats mặc định
+            level: 1, xp: 0, gold: 0, hp: 100, max_hp: 100, max_xp: 1000
+        };
+
+        // Thử Insert
+        const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
         
-        const { error } = await supabase.from('profiles').insert([
-            { 
-                id: userId, username: name, role, 
-                stats: INITIAL_CHAR.stats, 
-                level: 1, xp: 0, gold: 0, hp: 100 
+        if (insertError) {
+            // QUAN TRỌNG: Nếu lỗi là "Đã tồn tại" (23505), nghĩa là luồng khác đã tạo xong.
+            // Ta chỉ cần load lại dữ liệu là xong.
+            if (insertError.code === '23505') {
+                const { data: existing } = await supabase.from('profiles').select('*').eq('id', userId).single();
+                profile = existing; // Dùng cái đã có
+            } else {
+                throw insertError; // Lỗi khác thì báo ra
             }
-        ]);
-        if (error) throw error;
-        profile = newProfile;
-
-        // Tạo Quest mẫu
-        await supabase.from('quests').insert([
-            { user_id: userId, title: "Uống 1 ly nước", difficulty: "easy", reward_xp: 10, reward_gold: 5 },
-            { user_id: userId, title: "Tập thể dục 15p", difficulty: "medium", reward_xp: 30, reward_gold: 15 }
-        ]);
-        
-        // Tạo Shop Items mẫu (Global)
-        // Chỉ Admin hoặc hệ thống mới tạo Global items, user tạo item cá nhân
-        await supabase.from('shop_items').insert([
-            { user_id: userId, title: "Cà phê", cost: 50 },
-            { user_id: userId, title: "Xem phim", cost: 100 }
-        ]);
+        } else {
+            profile = newProfile; // Insert thành công
+            // Tạo dữ liệu mẫu cho người mới (Quest, Shop...)
+            // (Chỉ chạy khi chắc chắn insert thành công để tránh duplicate quest)
+            await supabase.from('quests').insert(DEFAULT_QUESTS.map(q => ({
+                user_id: userId, title: q.title, difficulty: q.difficulty, type: q.type, reward_xp: q.reward.xp, reward_gold: q.reward.gold
+            })));
+            await supabase.from('shop_items').insert(DEFAULT_SHOP_ITEMS.map(i => ({
+                user_id: userId, title: i.title, cost: i.cost
+            })));
+        }
       }
 
-      // B. Tải các bảng con liên quan
+      // 3. Load các bảng phụ (Lúc này chắc chắn đã có Profile)
       const { data: quests } = await supabase.from('quests').select('*').eq('user_id', userId).order('id');
       const { data: inventory } = await supabase.from('inventory').select('*').eq('user_id', userId);
       const { data: shopItems } = await supabase.from('shop_items').select('*').or(`user_id.eq.${userId},user_id.is.null`);
@@ -126,8 +138,8 @@ const useGameStore = create((set, get) => ({
       set({ 
           character: { 
               ...profile, 
-              name: profile.username, // Map lại tên trường cho khớp UI cũ
-              maxXp: 1000 * Math.pow(1.2, profile.level - 1) 
+              name: profile.username, 
+              maxXp: 1000 * Math.pow(1.2, (profile.level || 1) - 1) 
           },
           quests: quests || [],
           inventory: inventory || [],
@@ -137,7 +149,8 @@ const useGameStore = create((set, get) => ({
 
     } catch (err) {
       console.error("Load Error:", err);
-      toast.error("Lỗi tải dữ liệu: " + err.message);
+      // Không hiện thông báo lỗi đỏ nếu là lỗi duplicate (vì đã xử lý ngầm)
+      if (err.code !== '23505') toast.error("Lỗi tải dữ liệu: " + err.message);
       set({ isLoading: false });
     }
   },
