@@ -10,10 +10,17 @@ const QuestBoard = () => {
   const handleAdd = (e) => {
     e.preventDefault();
     if(!newQuest.title) return;
+    
     let reward = { xp: 10, gold: 5 };
     if(newQuest.difficulty === 'medium') reward = { xp: 30, gold: 15 };
     if(newQuest.difficulty === 'hard') reward = { xp: 50, gold: 30 };
-    addQuest({ ...newQuest, type: 'daily', reward });
+
+    // Gửi dữ liệu phẳng (flat) lên store để khớp với DB mới
+    addQuest({ 
+        ...newQuest, 
+        type: 'daily', 
+        reward: reward 
+    });
     setNewQuest({ title: '', difficulty: 'easy' });
     setIsAdding(false);
   };
@@ -30,8 +37,8 @@ const QuestBoard = () => {
       </div>
 
       {isAdding && (
-        <form onSubmit={handleAdd} className="glass-panel p-5 rounded-2xl mb-6 animate-fade-in border-l-4 border-l-emerald-500">
-            <input type="text" placeholder="Nhập tên nhiệm vụ..." className="w-full bg-slate-950/50 border border-slate-700 rounded-xl p-3 text-white mb-4 outline-none focus:border-emerald-500 transition-colors"
+        <form onSubmit={handleAdd} className="glass-panel p-5 rounded-2xl mb-6 border-l-4 border-l-emerald-500">
+            <input type="text" placeholder="Tên nhiệm vụ..." className="w-full bg-slate-950/50 border border-slate-700 rounded-xl p-3 text-white mb-4 outline-none focus:border-emerald-500"
                 value={newQuest.title} onChange={(e) => setNewQuest({...newQuest, title: e.target.value})} autoFocus />
             <div className="flex gap-3">
                 <select className="bg-slate-950/50 border border-slate-700 rounded-xl p-2 text-sm text-slate-300 outline-none focus:border-emerald-500 flex-1"
@@ -48,25 +55,26 @@ const QuestBoard = () => {
       <div className="space-y-3">
         {quests.length === 0 && (
             <div className="glass-panel p-10 rounded-2xl text-center border-dashed border-2 border-slate-700">
-                <p className="text-slate-500">Danh sách trống. Hãy khởi tạo hành trình!</p>
+                <p className="text-slate-500">Danh sách trống.</p>
             </div>
         )}
         {quests.map((quest) => (
-          <div key={quest.id} className={`group glass-panel p-4 rounded-2xl transition-all duration-300 hover:scale-[1.01] ${quest.isCompleted ? 'opacity-50 bg-slate-900' : 'hover:border-emerald-500/40 hover:shadow-[0_0_15px_rgba(16,185,129,0.1)]'}`}>
+          <div key={quest.id} className={`group glass-panel p-4 rounded-2xl transition-all hover:scale-[1.01] ${quest.is_completed ? 'opacity-50 bg-slate-900' : 'hover:border-emerald-500/40'}`}>
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => toggleQuest(quest.id)}>
-                    <div className={`transition-transform duration-300 ${quest.isCompleted ? 'text-emerald-500 scale-110' : 'text-slate-600 group-hover:text-emerald-400'}`}>
-                        {quest.isCompleted ? <CheckCircle2 size={28} className="drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]" /> : <Circle size={28} />}
+                    <div className={`transition-transform ${quest.is_completed ? 'text-emerald-500 scale-110' : 'text-slate-600'}`}>
+                        {quest.is_completed ? <CheckCircle2 size={28} /> : <Circle size={28} />}
                     </div>
                     <div>
-                        <h4 className={`font-bold text-lg ${quest.isCompleted ? 'line-through text-slate-500' : 'text-slate-100'}`}>{quest.title}</h4>
+                        <h4 className={`font-bold text-lg ${quest.is_completed ? 'line-through text-slate-500' : 'text-slate-100'}`}>{quest.title}</h4>
                         <div className="flex gap-3 mt-1">
-                             <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-400 uppercase font-bold tracking-wider">{quest.difficulty}</span>
-                             <span className="text-[10px] text-yellow-400 flex items-center gap-1 font-bold"><Sparkles size={10}/> +{quest.reward.gold}G</span>
+                             <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-400 uppercase font-bold">{quest.difficulty}</span>
+                             {/* SỬA TÊN BIẾN: reward_gold */}
+                             <span className="text-[10px] text-yellow-400 flex items-center gap-1 font-bold"><Sparkles size={10}/> +{quest.reward_gold}G</span>
                         </div>
                     </div>
                 </div>
-                <button onClick={() => deleteQuest(quest.id)} className="p-2 text-slate-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
+                <button onClick={() => deleteQuest(quest.id)} className="p-2 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all">
                     <Trash2 size={18} />
                 </button>
             </div>

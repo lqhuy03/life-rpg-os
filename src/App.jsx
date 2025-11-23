@@ -18,14 +18,12 @@ function App() {
   const { user, setUser, loadGameData, isLoading, checkDailyReset } = useGameStore(); // <--- Lấy thêm hàm checkDailyReset
 
   useEffect(() => {
-    // 1. Lắng nghe Auth
     const initData = async (session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-            await loadGameData(session.user.id);
-            // 2. Sau khi load xong thì check reset ngay
-            checkDailyReset(); 
-        }
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await loadGameData(session.user.id);
+        checkDailyReset(); // <--- GỌI HÀM Ở ĐÂY
+      }
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => initData(session));

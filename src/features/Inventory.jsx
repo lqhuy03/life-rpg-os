@@ -6,8 +6,7 @@ const Inventory = () => {
   const { inventory, useItem } = useGameStore();
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header đẹp hơn */}
+    <div className="space-y-6 animate-fade-in pb-20">
       <div className="flex items-center gap-3 mb-6">
          <div className="p-3 bg-purple-500/20 rounded-xl border border-purple-500/30">
             <Package className="text-purple-400" size={24} />
@@ -31,13 +30,11 @@ const Inventory = () => {
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-900 to-slate-900 flex items-center justify-center border border-slate-700">
                     <Sparkles size={16} className="text-purple-400" />
                   </div>
-                  <span className="font-bold text-slate-200">{item.title}</span>
+                  {/* SỬA TÊN BIẾN: item_name */}
+                  <span className="font-bold text-slate-200">{item.item_name}</span>
                </div>
                
-               <button 
-                onClick={() => useItem(item.id)}
-                className="btn-glass text-xs py-1.5 px-3 hover:bg-purple-600 hover:text-white hover:border-purple-500"
-               >
+               <button onClick={() => useItem(item.id)} className="btn-glass text-xs py-1.5 px-3 hover:bg-purple-600 hover:text-white hover:border-purple-500">
                  Dùng
                </button>
             </div>
