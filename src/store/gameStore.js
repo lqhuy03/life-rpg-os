@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../config/supabaseClient';
 import { toast } from 'sonner';
 
-// --- 1. RUBRIC & HELPER ---
+// --- RUBRIC & HELPER ---
 export const STAT_RUBRIC = {
     0: { label: "Khởi đầu", desc: "Chưa có nền tảng." },
     20: { label: "Tập sự", desc: "Đã bắt đầu, còn yếu." },
@@ -32,7 +32,7 @@ const calculateLevel = (xp) => {
     return { level, currentXp: xp, nextLevelXp: req };
 };
 
-// --- 2. DATA MẪU ---
+// --- DATA MẪU ---
 const DEFAULT_SHOP_ITEMS = [
     { title: "Cà phê / Trà sữa", cost: 50 },
     { title: "Xem phim 1 tập", cost: 80 },
@@ -41,8 +41,8 @@ const DEFAULT_SHOP_ITEMS = [
 ];
 
 const DEFAULT_QUESTS = [
-    { title: "Uống 1 ly nước", difficulty: "easy", type: "good", reward_xp: 10, reward_gold: 5, description: "Giúp não bộ tập trung hơn" },
-    { title: "Lướt TikTok quá 30p", difficulty: "medium", type: "bad", reward_xp: 0, reward_gold: 0, description: "Gây mất tập trung, tốn thời gian" },
+    { title: "Uống 1 ly nước", difficulty: "easy", type: "good", reward_xp: 10, reward_gold: 5, description: "Giúp não bộ tập trung" },
+    { title: "Lướt MXH quá 30p", difficulty: "medium", type: "bad", reward_xp: 0, reward_gold: 0, description: "Gây mất tập trung" },
 ];
 
 const INITIAL_CHAR = {
@@ -51,10 +51,11 @@ const INITIAL_CHAR = {
     last_reset_date: '', login_streak: 0
 };
 
-// --- 3. STORE ---
+// --- STORE CHÍNH ---
 const useGameStore = create((set, get) => ({
   user: null,
   isLoading: false,
+  showDailyLoginModal: false,
   
   character: INITIAL_CHAR,
   habits: [],
@@ -62,7 +63,7 @@ const useGameStore = create((set, get) => ({
   tasks: [],
   shopItems: [],
   inventory: [],
-  showDailyLoginModal: false,
+  logs: [], // Lưu nhật ký
 
   setUser: (user) => set({ user }),
   closeDailyModal: () => set({ showDailyLoginModal: false }),
@@ -78,24 +79,22 @@ const useGameStore = create((set, get) => ({
          const name = user?.user_metadata?.full_name || "Hero";
          const role = user?.email === 'huy30987@gmail.com' ? 'admin' : 'user';
 
-         const newProfile = { 
-             id: userId, username: name, role, stats: INITIAL_CHAR.stats,
-             level: 1, xp: 0, gold: 0, hp: 100
-         };
-
+         const newProfile = { id: userId, username: name, role, stats: INITIAL_CHAR.stats, level: 1, xp: 0, gold: 0, hp: 100 };
          const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
          
-         if (insertError && insertError.code !== '23505') throw insertError;
-         profile = newProfile;
-         
-         // Tạo mẫu
-         if (!insertError) {
+         if (insertError) {
+             if (insertError.code === '23505') {
+                 const { data: existing } = await supabase.from('profiles').select('*').eq('id', userId).single();
+                 profile = existing;
+             } else { throw insertError; }
+         } else {
+             profile = newProfile;
              await supabase.from('habits').insert(DEFAULT_QUESTS.map(q => ({ ...q, user_id: userId })));
              await supabase.from('shop_items').insert(DEFAULT_SHOP_ITEMS.map(i => ({ ...i, user_id: userId })));
          }
       }
 
-      await supabase.rpc('check_login_streak'); // Gọi hàm DB tính streak đăng nhập
+      await supabase.rpc('check_login_streak'); // Gọi hàm DB
       const { data: updatedProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
       const { data: habits } = await supabase.from('habits').select('*').eq('user_id', userId).order('id');
@@ -103,26 +102,17 @@ const useGameStore = create((set, get) => ({
       const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', userId).order('is_completed');
       const { data: inventory } = await supabase.from('inventory').select('*').eq('user_id', userId);
       const { data: shopItems } = await supabase.from('shop_items').select('*').or(`user_id.eq.${userId},user_id.is.null`);
+      const { data: logs } = await supabase.from('activity_logs').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
 
       const levelInfo = calculateLevel(updatedProfile.xp || 0);
       const today = new Date().toISOString().split('T')[0];
       const showPopup = updatedProfile.last_login_date === today && localStorage.getItem('seen_daily_popup') !== today;
 
       set({
-        character: { 
-            ...updatedProfile, 
-            name: updatedProfile.username, 
-            xp: levelInfo.currentXp, 
-            maxXp: levelInfo.nextLevelXp, 
-            level: levelInfo.level 
-        },
-        habits: habits || [],
-        projects: projects || [],
-        tasks: tasks || [],
-        inventory: inventory || [],
-        shopItems: shopItems || [],
-        isLoading: false,
-        showDailyLoginModal: showPopup
+        character: { ...updatedProfile, name: updatedProfile.username, xp: levelInfo.currentXp, maxXp: levelInfo.nextLevelXp, level: levelInfo.level },
+        habits: habits || [], projects: projects || [], tasks: tasks || [],
+        inventory: inventory || [], shopItems: shopItems || [], logs: logs || [],
+        isLoading: false, showDailyLoginModal: showPopup
       });
 
     } catch (err) {
@@ -131,8 +121,21 @@ const useGameStore = create((set, get) => ({
     }
   },
 
-  // --- HABIT LOGIC (GOOD vs BAD) ---
-  
+  // --- LOG ACTIVITY ---
+  logActivity: async (actionType, targetName, xp, gold) => {
+      const state = get();
+      const newLog = {
+          user_id: state.user.id,
+          action_type: actionType,
+          target_name: targetName,
+          xp_gained: xp,
+          gold_gained: gold
+      };
+      const { data } = await supabase.from('activity_logs').insert([newLog]).select();
+      if (data) set(s => ({ logs: [data[0], ...s.logs] }));
+  },
+
+  // --- HABITS ---
   addHabit: async (habit) => {
       const state = get();
       const { data, error } = await supabase.from('habits').insert([{
@@ -140,7 +143,7 @@ const useGameStore = create((set, get) => ({
           title: habit.title,
           difficulty: habit.difficulty,
           type: habit.type,
-          description: habit.description // Lưu lý do/hướng dẫn riêng
+          description: habit.description // Lưu mô tả
       }]).select();
       if (!error) {
           set(s => ({ habits: [...s.habits, data[0]] }));
@@ -153,51 +156,32 @@ const useGameStore = create((set, get) => ({
       const today = new Date().toISOString().split('T')[0];
       if (habit.last_completed_date === today) return;
 
-      // LOGIC THƯỞNG / PHẠT
-      if (habit.type === 'good') {
-          // 1. THÓI QUEN TỐT: Làm xong -> Thưởng
-          let xp = 10; let gold = 5;
-          if (habit.difficulty === 'medium') { xp = 20; gold = 10; }
-          if (habit.difficulty === 'hard') { xp = 40; gold = 20; }
+      let xp = 10; let gold = 5;
+      if (habit.difficulty === 'medium') { xp = 20; gold = 10; }
+      if (habit.difficulty === 'hard') { xp = 40; gold = 20; }
 
+      if (habit.type === 'good') {
+          // THÓI QUEN TỐT
           const newStreak = habit.current_streak + 1;
           const newHistory = [...(habit.history || []), today];
-
-          await supabase.from('habits').update({ 
-              current_streak: newStreak, 
-              last_completed_date: today,
-              history: newHistory
-          }).eq('id', habit.id);
-
-          await state.addReward(xp, gold); // Cộng thưởng
           
-          // Cập nhật UI Local
-          set(s => ({
-              habits: s.habits.map(h => h.id === habit.id ? { ...h, current_streak: newStreak, last_completed_date: today, history: newHistory } : h)
-          }));
+          await supabase.from('habits').update({ current_streak: newStreak, last_completed_date: today, history: newHistory }).eq('id', habit.id);
+          await state.addReward(xp, gold);
+          await state.logActivity('habit_done', habit.title, xp, gold);
+
+          set(s => ({ habits: s.habits.map(h => h.id === habit.id ? { ...h, current_streak: newStreak, last_completed_date: today, history: newHistory } : h) }));
           toast.success(`Tuyệt vời! +${xp} XP`);
-
       } else {
-          // 2. THÓI QUEN XẤU: Lỡ làm (Relapse) -> Phạt
-          let damage = 10;
-          if (habit.difficulty === 'medium') damage = 20;
-          if (habit.difficulty === 'hard') damage = 30;
-
-          // Reset Streak về 0 (Vì đã phạm quy)
+          // THÓI QUEN XẤU (PHẠT)
           const newHistory = [...(habit.history || []), today];
+          await supabase.from('habits').update({ current_streak: 0, last_completed_date: today, history: newHistory }).eq('id', habit.id);
           
-          await supabase.from('habits').update({ 
-              current_streak: 0, 
-              last_completed_date: today,
-              history: newHistory
-          }).eq('id', habit.id);
+          const damage = habit.difficulty === 'hard' ? 30 : 15;
+          await state.takeDamage(damage);
+          await state.logActivity('habit_fail', habit.title, 0, 0);
 
-          await state.takeDamage(damage); // Trừ máu
-
-          set(s => ({
-              habits: s.habits.map(h => h.id === habit.id ? { ...h, current_streak: 0, last_completed_date: today, history: newHistory } : h)
-          }));
-          toast.error(`Bạn đã phạm quy! -${damage} HP`);
+          set(s => ({ habits: s.habits.map(h => h.id === habit.id ? { ...h, current_streak: 0, last_completed_date: today, history: newHistory } : h) }));
+          toast.error(`Phạm quy! -${damage} HP`);
       }
   },
 
@@ -206,62 +190,7 @@ const useGameStore = create((set, get) => ({
       set(s => ({ habits: s.habits.filter(h => h.id !== id) }));
   },
 
-  // --- DAILY RESET & PASSIVE REWARD ---
-  checkDailyReset: async () => {
-    const state = get();
-    if (!state.user) return;
-    const today = new Date().toISOString().split('T')[0];
-    
-    if (state.character.last_reset_date !== today) {
-        console.log("🌅 New Day Check...");
-        
-        // 1. Kiểm tra Habit Xấu hôm qua: Nếu không làm -> Thưởng (Passive XP)
-        const habits = state.habits;
-        let bonusXp = 0;
-        
-        habits.forEach(h => {
-            if (h.type === 'bad' && h.last_completed_date !== today) {
-                // Nếu hôm nay chưa check (tức là chưa phạm quy), 
-                // thực tế logic này nên check ngày hôm qua, nhưng để đơn giản ta tính luôn lúc reset
-                // Ta sẽ tăng streak cho Bad Habit nếu nó chưa bị reset về 0
-                bonusXp += 10; 
-            }
-        });
-
-        if (bonusXp > 0) {
-            await state.addReward(bonusXp, 0);
-            toast.success(`Kiềm chế thói quen xấu: +${bonusXp} XP!`);
-        }
-
-        // 2. Reset & Cập nhật ngày
-        await supabase.from('profiles').update({ last_reset_date: today }).eq('id', state.user.id);
-        set(s => ({ character: { ...s.character, last_reset_date: today } }));
-    }
-  },
-
-  // --- HELPERS ---
-  addReward: async (xpGain, goldGain) => {
-      const state = get();
-      const { xp, gold, id } = state.character;
-      const { error } = await supabase.from('profiles').update({ xp: xp + xpGain, gold: gold + goldGain }).eq('id', id);
-      if (!error) {
-          const levelInfo = calculateLevel(xp + xpGain);
-          set(s => ({ character: { ...s.character, xp: levelInfo.currentXp, maxXp: levelInfo.nextLevelXp, level: levelInfo.level, gold: gold + goldGain } }));
-      }
-  },
-
-  takeDamage: async (dmg) => {
-      const state = get();
-      let { hp, id } = state.character;
-      let newHp = Math.max(0, hp - dmg);
-      
-      await supabase.from('profiles').update({ hp: newHp }).eq('id', id);
-      set(s => ({ character: { ...s.character, hp: newHp } }));
-      
-      if (newHp === 0) toast.error("BẠN ĐÃ KIỆT SỨC! (Hãy nghỉ ngơi hoặc dùng vật phẩm hồi phục)");
-  },
-
-  // ... (Giữ nguyên Project, Task, Shop actions cũ) ...
+  // --- PROJECTS & TASKS ---
   addProject: async (title) => {
       const state = get();
       const { data } = await supabase.from('projects').insert([{ user_id: state.user.id, title: title }]).select();
@@ -273,7 +202,9 @@ const useGameStore = create((set, get) => ({
   },
   addTask: async (task) => {
       const state = get();
-      const { data } = await supabase.from('tasks').insert([{ user_id: state.user.id, project_id: task.projectId || null, title: task.title, difficulty: task.difficulty, priority: task.priority }]).select();
+      const { data } = await supabase.from('tasks').insert([{
+          user_id: state.user.id, project_id: task.projectId || null, title: task.title, difficulty: task.difficulty, priority: task.priority
+      }]).select();
       if (data) set(s => ({ tasks: [...s.tasks, data[0]] }));
   },
   toggleTask: async (id) => {
@@ -281,14 +212,22 @@ const useGameStore = create((set, get) => ({
       const task = state.tasks.find(t => t.id === id);
       if (!task) return;
       const isCompleted = !task.is_completed;
+      
       await supabase.from('tasks').update({ is_completed: isCompleted, completed_at: isCompleted ? new Date() : null }).eq('id', id);
-      if (isCompleted) { await state.addReward(20, 10); toast.success("Task Done!"); }
+      
+      if (isCompleted) { 
+          await state.addReward(20, 10); 
+          await state.logActivity('task_done', task.title, 20, 10);
+          toast.success("Task Done! +20 XP");
+      }
       set(s => ({ tasks: s.tasks.map(t => t.id === id ? { ...t, is_completed: isCompleted } : t) }));
   },
   deleteTask: async (id) => {
       await supabase.from('tasks').delete().eq('id', id);
       set(s => ({ tasks: s.tasks.filter(t => t.id !== id) }));
   },
+
+  // --- SHOP & INVENTORY ---
   addShopItem: async (item) => {
       const state = get();
       const { data } = await supabase.from('shop_items').insert([{ user_id: state.user.id, title: item.title, cost: item.cost }]).select();
@@ -305,6 +244,8 @@ const useGameStore = create((set, get) => ({
           const newGold = state.character.gold - item.cost;
           await supabase.from('profiles').update({ gold: newGold }).eq('id', state.user.id);
           const { data } = await supabase.from('inventory').insert([{ user_id: state.user.id, item_name: item.title }]).select();
+          
+          await state.logActivity('buy_item', item.title, 0, -item.cost);
           set(s => ({ character: { ...s.character, gold: newGold }, inventory: [...s.inventory, data[0]] }));
           toast.success(`Đã mua: ${item.title}`);
       } else {
@@ -316,11 +257,56 @@ const useGameStore = create((set, get) => ({
       set(s => ({ inventory: s.inventory.filter(i => i.id !== id) }));
       toast.info("Đã dùng vật phẩm");
   },
+
+  // --- CORE HELPERS ---
+  addReward: async (xpGain, goldGain) => {
+      const state = get();
+      const { xp, gold, id } = state.character;
+      const { error } = await supabase.from('profiles').update({ xp: xp + xpGain, gold: gold + goldGain }).eq('id', id);
+      if (!error) {
+          const levelInfo = calculateLevel(xp + xpGain);
+          set(s => ({ character: { ...s.character, xp: levelInfo.currentXp, maxXp: levelInfo.nextLevelXp, level: levelInfo.level, gold: gold + goldGain } }));
+      }
+  },
+  takeDamage: async (dmg) => {
+      const state = get();
+      let { hp, id } = state.character;
+      let newHp = Math.max(0, hp - dmg);
+      await supabase.from('profiles').update({ hp: newHp }).eq('id', id);
+      set(s => ({ character: { ...s.character, hp: newHp } }));
+      if (newHp === 0) toast.error("BẠN ĐÃ KIỆT SỨC!");
+  },
   updateProfile: async (name, stats) => {
       const state = get();
       await supabase.from('profiles').update({ username: name, stats }).eq('id', state.user.id);
       set(s => ({ character: { ...s.character, name, stats } }));
       toast.success("Đã lưu hồ sơ");
+  },
+
+  // --- DAILY RESET ---
+  checkDailyReset: async () => {
+    const state = get();
+    if (!state.user) return;
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (state.character.last_reset_date !== today) {
+        const habits = state.habits;
+        let bonusXp = 0;
+        // Logic thưởng nếu hôm qua không phạm quy (Bad Habit)
+        habits.forEach(h => {
+            if (h.type === 'bad' && h.last_completed_date !== today) {
+                bonusXp += 10; 
+            }
+        });
+        if (bonusXp > 0) {
+            await state.addReward(bonusXp, 0);
+            toast.success(`Kiềm chế tốt! +${bonusXp} XP`);
+        }
+
+        await supabase.from('profiles').update({ last_reset_date: today }).eq('id', state.user.id);
+        set(s => ({ character: { ...s.character, last_reset_date: today } }));
+        toast.info("Ngày mới! Chúc bạn năng suất.");
+    }
   }
 }));
 

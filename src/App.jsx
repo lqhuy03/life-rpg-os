@@ -17,6 +17,7 @@ import Inventory from './features/Inventory';
 import Profile from './features/Profile';
 import SettingsPage from './features/Settings';
 import AdminDashboard from './features/AdminDashboard';
+import Stats from './features/Stats/Stats';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -64,6 +65,7 @@ function App() {
           <div className="max-w-6xl mx-auto">
              {activeTab === 'dashboard' && <Dashboard />}
              {activeTab === 'quests' && <QuestBoard />}
+             {activeTab === 'stats' && <Stats />}
              {activeTab === 'shop' && <Shop />}
              {activeTab === 'inventory' && <Inventory />}
              {activeTab === 'profile' && <Profile />}

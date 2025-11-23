@@ -1,11 +1,12 @@
 import React from 'react';
-import { LayoutDashboard, ScrollText, ShoppingBag, Package, ShieldAlert, Settings } from 'lucide-react'; // Bỏ import LogOut
+import { LayoutDashboard, ScrollText, ShoppingBag, Package, ShieldAlert, Settings, LineChart } from 'lucide-react';
 import { supabase } from '../config/supabaseClient';
 
 const Sidebar = ({ activeTab, setActiveTab, isAdmin }) => {
   const menu = [
     { id: 'dashboard', label: 'Tổng quan', icon: LayoutDashboard },
     { id: 'quests', label: 'Nhiệm vụ', icon: ScrollText },
+    { id: 'stats', label: 'Thống kê', icon: LineChart },
     { id: 'shop', label: 'Cửa hàng', icon: ShoppingBag },
     { id: 'inventory', label: 'Túi đồ', icon: Package },
   ];
