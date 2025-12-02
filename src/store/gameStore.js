@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../config/supabaseClient';
 import { toast } from 'sonner';
 
-// --- RUBRIC & HELPER ---
+// --- 1. RUBRIC & HELPER ---
 export const STAT_RUBRIC = {
     0: { label: "Khởi đầu", desc: "Chưa có nền tảng." },
     20: { label: "Tập sự", desc: "Đã bắt đầu, còn yếu." },
@@ -32,7 +32,7 @@ const calculateLevel = (xp) => {
     return { level, currentXp: xp, nextLevelXp: req };
 };
 
-// --- DATA MẪU ---
+// --- 2. DATA MẪU ---
 const DEFAULT_SHOP_ITEMS = [
     { title: "Cà phê / Trà sữa", cost: 50 },
     { title: "Xem phim 1 tập", cost: 80 },
@@ -45,13 +45,18 @@ const DEFAULT_QUESTS = [
     { title: "Lướt MXH quá 30p", difficulty: "medium", type: "bad", reward_xp: 0, reward_gold: 0, description: "Gây mất tập trung" },
 ];
 
+// CẬP NHẬT 8 CHỈ SỐ MỚI & TIER
 const INITIAL_CHAR = {
     name: "Hero", role: 'user', level: 1, xp: 0, maxXp: 1000, gold: 0, hp: 100, maxHp: 100,
-    stats: { health: 50, wisdom: 50, wealth: 50, social: 50, career: 50, spirit: 50 },
+    stats: { 
+        health: 5, finance: 5, career: 5, growth: 5, 
+        relationship: 5, fun: 5, environment: 5, spirit: 5 
+    },
+    current_tier: null, // Mặc định chưa có tier
     last_reset_date: '', login_streak: 0
 };
 
-// --- STORE CHÍNH ---
+// --- 3. STORE CHÍNH ---
 const useGameStore = create((set, get) => ({
   user: null,
   isLoading: false,
@@ -63,7 +68,7 @@ const useGameStore = create((set, get) => ({
   tasks: [],
   shopItems: [],
   inventory: [],
-  logs: [], // Lưu nhật ký
+  logs: [], 
 
   setUser: (user) => set({ user }),
   closeDailyModal: () => set({ showDailyLoginModal: false }),
@@ -79,7 +84,13 @@ const useGameStore = create((set, get) => ({
          const name = user?.user_metadata?.full_name || "Hero";
          const role = user?.email === 'huy30987@gmail.com' ? 'admin' : 'user';
 
-         const newProfile = { id: userId, username: name, role, stats: INITIAL_CHAR.stats, level: 1, xp: 0, gold: 0, hp: 100 };
+         const newProfile = { 
+             id: userId, username: name, role, 
+             stats: INITIAL_CHAR.stats, // Dùng 8 chỉ số mới
+             level: 1, xp: 0, gold: 0, hp: 100, 
+             current_tier: null 
+         };
+
          const { error: insertError } = await supabase.from('profiles').insert([newProfile]);
          
          if (insertError) {
@@ -94,7 +105,7 @@ const useGameStore = create((set, get) => ({
          }
       }
 
-      await supabase.rpc('check_login_streak'); // Gọi hàm DB
+      await supabase.rpc('check_login_streak'); 
       const { data: updatedProfile } = await supabase.from('profiles').select('*').eq('id', userId).single();
 
       const { data: habits } = await supabase.from('habits').select('*').eq('user_id', userId).order('id');
@@ -109,7 +120,13 @@ const useGameStore = create((set, get) => ({
       const showPopup = updatedProfile.last_login_date === today && localStorage.getItem('seen_daily_popup') !== today;
 
       set({
-        character: { ...updatedProfile, name: updatedProfile.username, xp: levelInfo.currentXp, maxXp: levelInfo.nextLevelXp, level: levelInfo.level },
+        character: { 
+            ...updatedProfile, 
+            name: updatedProfile.username, 
+            xp: levelInfo.currentXp, 
+            maxXp: levelInfo.nextLevelXp, 
+            level: levelInfo.level 
+        },
         habits: habits || [], projects: projects || [], tasks: tasks || [],
         inventory: inventory || [], shopItems: shopItems || [], logs: logs || [],
         isLoading: false, showDailyLoginModal: showPopup
@@ -143,7 +160,7 @@ const useGameStore = create((set, get) => ({
           title: habit.title,
           difficulty: habit.difficulty,
           type: habit.type,
-          description: habit.description // Lưu mô tả
+          description: habit.description 
       }]).select();
       if (!error) {
           set(s => ({ habits: [...s.habits, data[0]] }));
@@ -161,7 +178,6 @@ const useGameStore = create((set, get) => ({
       if (habit.difficulty === 'hard') { xp = 40; gold = 20; }
 
       if (habit.type === 'good') {
-          // THÓI QUEN TỐT
           const newStreak = habit.current_streak + 1;
           const newHistory = [...(habit.history || []), today];
           
@@ -172,7 +188,6 @@ const useGameStore = create((set, get) => ({
           set(s => ({ habits: s.habits.map(h => h.id === habit.id ? { ...h, current_streak: newStreak, last_completed_date: today, history: newHistory } : h) }));
           toast.success(`Tuyệt vời! +${xp} XP`);
       } else {
-          // THÓI QUEN XẤU (PHẠT)
           const newHistory = [...(habit.history || []), today];
           await supabase.from('habits').update({ current_streak: 0, last_completed_date: today, history: newHistory }).eq('id', habit.id);
           
@@ -276,11 +291,19 @@ const useGameStore = create((set, get) => ({
       set(s => ({ character: { ...s.character, hp: newHp } }));
       if (newHp === 0) toast.error("BẠN ĐÃ KIỆT SỨC!");
   },
-  updateProfile: async (name, stats) => {
+  
+  // --- UPDATE PROFILE (Hỗ trợ cả Tier) ---
+  updateProfile: async (name, stats, tier = null) => { 
       const state = get();
-      await supabase.from('profiles').update({ username: name, stats }).eq('id', state.user.id);
-      set(s => ({ character: { ...s.character, name, stats } }));
-      toast.success("Đã lưu hồ sơ");
+      const updates = { username: name, stats: stats };
+      if (tier) updates.current_tier = tier;
+
+      await supabase.from('profiles').update(updates).eq('id', state.user.id);
+      
+      set(s => ({ 
+          character: { ...s.character, name, stats, ...(tier && { current_tier: tier }) } 
+      }));
+      if (!tier) toast.success("Đã lưu hồ sơ");
   },
 
   // --- DAILY RESET ---
@@ -292,7 +315,6 @@ const useGameStore = create((set, get) => ({
     if (state.character.last_reset_date !== today) {
         const habits = state.habits;
         let bonusXp = 0;
-        // Logic thưởng nếu hôm qua không phạm quy (Bad Habit)
         habits.forEach(h => {
             if (h.type === 'bad' && h.last_completed_date !== today) {
                 bonusXp += 10; 

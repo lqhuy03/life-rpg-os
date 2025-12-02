@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CV Le Quang Huy - Fresher Java Developer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #525659;
+            margin: 0;
+            padding: 0;
+            color: #111827;
+            line-height: 1.32; /* Giảm line-height xíu xiu để các dòng xích lại gần nhau hơn */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 20px auto;
+            display: flex;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* --- LEFT COLUMN --- */
+        .left-col {
+            background-color: #f8fafc;
+            width: 32%;
+            padding: 20px 20px; /* Giảm padding trên dưới từ 25 xuống 20 */
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .avatar-box {
+            width: 120px; 
+            height: 160px; 
+            margin: 0 auto 12px auto; /* Giảm margin bottom */
+            overflow: hidden;
+            border: 3px solid #f97316;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .left-header {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            border-bottom: 2px solid #bfdbfe;
+            padding-bottom: 3px;
+            margin-top: 14px; /* Đã sửa: Giảm khoảng cách trên tiêu đề theo yêu cầu */
+            margin-bottom: 6px; 
+            letter-spacing: 0.5px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px; /* Giảm khoảng cách item liên hệ */
+            font-size: 12px;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .info-item i { width: 22px; color: #f97316; font-size: 14px; flex-shrink: 0; }
+        .info-item a { color: #4b5563; text-decoration: none; }
+        .info-item a:hover { color: #1e3a8a; text-decoration: underline; }
+
+        .skill-group { margin-bottom: 10px; }
+        .skill-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 3px; }
+        .skill-tag-container { display: flex; flex-wrap: wrap; gap: 4px; }
+        .skill-tag {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .cert-item { margin-bottom: 8px; }
+        .cert-title { font-weight: 700; color: #1f2937; display: block; font-size: 12px;}
+        .cert-meta { font-size: 11px; color: #6b7280; margin-top: 1px;}
+
+        .soft-skill-text {
+            font-size: 12px;
+            color: #4b5563;
+            margin-bottom: 2px;
+            position: relative;
+            padding-left: 14px;
+        }
+        .soft-skill-text::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #f97316;
+            font-weight: bold;
+            font-size: 14px;
+            line-height: 12px;
+        }
+
+        /* --- RIGHT COLUMN --- */
+        .right-col {
+            width: 68%;
+            padding: 22px 25px; /* Giảm padding top/bottom */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .name-header {
+            font-size: 32px;
+            font-weight: 900;
+            color: #111827;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        
+        .job-target {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f97316;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+        }
+
+        .summary-text {
+            font-size: 13px;
+            text-align: justify;
+            color: #374151;
+            margin-bottom: 10px; /* Giảm margin bottom */
+            line-height: 1.4;
+            padding-bottom: 10px; /* Giảm padding bottom */
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 4px;
+            margin-top: 6px; /* Kéo tiêu đề lên */
+            margin-bottom: 8px; /* Kéo nội dung sát tiêu đề */
+            display: flex;
+            align-items: center;
+            letter-spacing: 0.5px;
+        }
+        .section-title i { margin-right: 10px; color: #1e3a8a; font-size: 16px; }
+
+        /* Projects */
+        .project-item { margin-bottom: 12px; /* Giảm khoảng cách giữa các dự án */ }
+        .project-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+        .project-name { font-size: 14px; font-weight: 800; color: #1f2937; text-transform: uppercase; }
+        .project-time { font-size: 12px; font-weight: 600; color: #0369a1; }
+        .project-role { font-size: 12px; font-weight: 600; color: #4b5563; font-style: italic; margin-bottom: 2px; }
+        
+        .project-desc ul { list-style-type: disc; padding-left: 16px; margin: 0; }
+        .project-desc li {
+            font-size: 12.5px;
+            color: #374151;
+            margin-bottom: 1px; /* Sát dòng hơn */
+            text-align: justify;
+            line-height: 1.35;
+        }
+        .project-desc li strong { color: #111827; font-weight: 700; }
+        .source-link { font-size: 12px; color: #6b7280; margin-top: 2px; display: inline-flex; align-items: center; text-decoration: none;}
+        .source-link:hover { color: #000; }
+
+        /* Education */
+        .edu-block { margin-bottom: 0; }
+        .edu-school { font-size: 14px; font-weight: 800; color: #1f2937; }
+        .edu-meta-row { display: flex; justify-content: space-between; font-size: 13px; color: #4b5563; margin-top: 1px;}
+        .edu-gpa { font-weight: 700; color: #1d4ed8; }
+        .edu-honor { font-size: 12px; color: #b45309; font-style: italic; margin-top: 2px; display: flex; align-items: center;}
+
+        @media print {
+            body { background: white; }
+            .a4-page { margin: 0; box-shadow: none; height: auto; width: 100%; border: none;}
+            .no-print { display: none!important; }
+            .left-col { background-color: #f8fafc!important; -webkit-print-color-adjust: exact; }
+            .skill-tag { background-color: #e0f2fe!important; -webkit-print-color-adjust: exact; }
+            .section-title { border-bottom: 2px solid #e5e7eb!important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print fixed bottom-6 right-6 z-50">
+        <button onclick="window.print()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-full shadow-lg flex items-center transition transform hover:scale-105">
+            <i class="fas fa-print mr-2"></i> Save PDF
+        </button>
+    </div>
+
+    <div class="a4-page">
+        <div class="left-col">
+            <div class="avatar-box">
+                <img src="./avatar.png" alt="Avatar"> 
+            </div>
+
+            <div class="left-header"><i class="fas fa-address-card mr-2"></i>Contact</div>
+            <div class="info-item"><i class="fas fa-calendar-alt"></i> Feb 11, 2003</div>
+            <div class="info-item"><i class="fas fa-phone-alt"></i> 0378 320 037</div>
+            <div class="info-item"><i class="fas fa-envelope"></i> quanghuy.le.dev@gmail.com</div>
+            <div class="info-item"><i class="fas fa-map-marker-alt"></i> Ho Chi Minh City</div>
+            <div class="info-item"><i class="fab fa-linkedin"></i> <a href="#">linkedin/le-quang-huy</a></div>
+            <div class="info-item"><i class="fab fa-github"></i> <a href="https://github.com/lqhuy03">github.com/lqhuy03</a></div>
+
+            <div class="left-header"><i class="fas fa-code mr-2"></i>Skills</div>
+            
+            <div class="skill-group">
+                <div class="skill-title">Languages & Core</div>
+                <div class="skill-tag-container">
+                    <span class="skill-tag">Java</span>
+                    <span class="skill-tag">OOP & DSA</span>
+                    <span class="skill-tag">SQL</span>
+                    <span class="skill-tag">RESTful APIs</span>
+                </div>
+            </div>
+
+            <div class="skill-group">
+                <div class="skill-title">Frameworks & Tools</div>
+                <div class="skill-tag-container">
+                    <span class="skill-tag">Spring Boot</span>
+                    <span class="skill-tag">Spring Security</span>
+                    <span class="skill-tag">Hibernate/JPA</span>
+                    <span class="skill-tag">Redis</span>
+                    <span class="skill-tag">Docker</span>
+                </div>
+            </div>
+
+            <div class="skill-group">
+                <div class="skill-title">Frontend & Others</div>
+                <div class="skill-tag-container">
+                    <span class="skill-tag">Vue.js</span>
+                    <span class="skill-tag">Bootstrap</span>
+                    <span class="skill-tag">Git/Github</span>
+                    <span class="skill-tag">Postman</span>
+                </div>
+            </div>
+
+            <div class="left-header"><i class="fas fa-globe mr-2"></i>Languages</div>
+            <div style="font-size: 12px; line-height: 1.4; color: #374151;">
+                <strong>English:</strong> Intermediate
+                <div style="font-size: 11px; color: #f97316; font-weight: 600; margin-top:2px;">Targeting IELTS 6.0</div>
+                <div style="font-size: 11px; font-style: italic; color: #6b7280;">(Able to read technical docs & communicate)</div>
+            </div>
+
+            <div class="left-header"><i class="fas fa-certificate mr-2"></i>Certificates</div>
+            <div class="cert-item">
+                <span class="cert-title">Web Dev with Spring Boot</span>
+                <span class="cert-meta">Educative.io (2024)</span>
+            </div>
+            <div class="cert-item">
+                <span class="cert-title">Grokking Modern System Design</span>
+                <span class="cert-meta">Educative.io (2025)</span>
+            </div>
+
+            <div class="left-header"><i class="fas fa-users mr-2"></i>Soft Skills</div>
+            <div class="soft-skill-text">Problem-solving</div>
+            <div class="soft-skill-text">Critical Thinking</div>
+            <div class="soft-skill-text">Agile/Scrum Teamwork</div>
+            <div class="soft-skill-text">Growth Mindset</div>
+        </div>
+
+        <div class="right-col">
+            <h1 class="name-header">LE QUANG HUY</h1>
+            <h2 class="job-target">FRESHER JAVA DEVELOPER</h2>
+
+            <div class="summary-text">
+                Final-year Software Development student with a strong foundation in the <strong>Java Ecosystem</strong>. Experienced in building scalable systems using <strong>Spring Boot</strong>, <strong>Redis</strong>, and <strong>Docker</strong>. Eager to join FPT Software's Fresher Academy to apply technical skills, adapt quickly to enterprise projects, and aim to become a <strong>Solution Architect</strong> in the next 5 years.
+            </div>
+
+            <div class="section-title"><i class="fas fa-laptop-code"></i> FEATURED PROJECTS</div>
+
+            <div class="project-item">
+                <div class="project-header">
+                    <span class="project-name">1. FITLIFE - GYM & PT BOOKING PLATFORM</span>
+                    <span class="project-time">Oct 2025 - Present</span>
+                </div>
+                <div class="project-role">Backend Lead & System Designer | Team: 5</div>
+                
+                <div class="project-desc">
+                    <ul>
+                        <li><strong>Concurrency Control:</strong> Engineered a robust booking engine using <strong>Pessimistic Locking</strong> (MySQL Row-lock) to resolve Race Conditions, ensuring 100% data consistency under high load.</li>
+                        <li><strong>Performance & Async:</strong> Utilized <strong>Spring Async</strong> for non-blocking email processing, reducing main API response time by <strong>60%</strong> (from 500ms to 200ms).</li>
+                        <li><strong>Optimization:</strong> Implemented <strong>Redis Caching</strong> (Cache-Aside pattern) for PT profiles and packages, speeding up read operations by 40%.</li>
+                        <li><strong>Security:</strong> Secured APIs with <strong>Spring Security + JWT</strong> and designed RBAC for strict permission management (Admin/PT/Member).</li>
+                        <li><strong>DevOps:</strong> Containerized the entire stack (App, DB, Redis) using <strong>Docker Compose</strong> for consistent deployment.</li>
+                    </ul>
+                </div>
+                <a href="https://github.com/lqhuy03/fitlife" class="source-link"><i class="fab fa-github mr-1"></i>github.com/lqhuy03/fitlife</a>
+            </div>
+
+            <div class="project-item">
+                <div class="project-header">
+                    <span class="project-name">2. READIFY - E-COMMERCE BOOKSTORE</span>
+                    <span class="project-time">Aug 2025 - Oct 2025</span>
+                </div>
+                <div class="project-role">Fullstack Developer | Personal Project</div>
+
+                <div class="project-desc">
+                    <ul>
+                        <li><strong>Advanced Search:</strong> Built a dynamic filter engine using <strong>Hibernate Specifications</strong> to filter books by multiple criteria (Author, Rating, Price) efficiently.</li>
+                        <li><strong>Recommendation System:</strong> Applied <strong>Collaborative Filtering</strong> algorithm to suggest books based on user purchase history.</li>
+                        <li><strong>Performance:</strong> Utilized <strong>Redis</strong> to cache "Top Selling Books", optimizing the homepage load time.</li>
+                        <li><strong>Architecture:</strong> Followed <strong>SOLID principles</strong> and N-tier Architecture to ensure code maintainability and scalability.</li>
+                    </ul>
+                </div>
+                <a href="https://github.com/lqhuy03/readify" class="source-link"><i class="fab fa-github mr-1"></i>github.com/lqhuy03/readify</a>
+            </div>
+
+            <div class="section-title"><i class="fas fa-layer-group"></i> EXTRACURRICULAR</div>
+            <div class="project-item" style="margin-bottom: 8px;">
+                <div class="project-header">
+                    <span class="project-name" style="font-size: 13px;">AI-ASSISTED TIME MANAGER</span>
+                    <span class="project-time">Apr 2025 - May 2025</span>
+                </div>
+                <div class="project-desc">
+                    <ul>
+                        <li>Integrated <strong>OpenNLP</strong> to parse natural language tasks into structured calendar events. Built CRUD REST APIs using Spring Boot.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="fas fa-user-graduate"></i> EDUCATION</div>
+            <div class="edu-block">
+                <div class="edu-school">FPT POLYTECHNIC COLLEGE</div>
+                <div class="edu-meta-row">
+                    <span>Major: Software Development</span>
+                    <span>2024 - Present (Grad: May 2026)</span>
+                </div>
+                <div class="edu-meta-row mt-1">
+                    <span class="font-bold text-[#1d4ed8]">GPA: 3.78 / 4.0 (Excellent)</span>
+                </div>
+                <div class="edu-honor">
+                    <i class="fas fa-award mr-1"></i>Top 150 Excellent Students (Spring 2025)
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
