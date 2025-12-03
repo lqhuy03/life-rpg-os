@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS - Hệ Thống Quản Trị Bản Thân</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons (No SVG allowed directly) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chosen Palette: Warm Neutrals & Deep Accents -->
+    <!-- Background: #F3F4F6 (Cool Gray 100) -->
+    <!-- Primary Text: #1F2937 (Gray 800) -->
+    <!-- Accent Career: #1E40AF (Blue 800) -->
+    <!-- Accent Health: #047857 (Emerald 700) -->
+    <!-- Accent Growth: #B45309 (Amber 700) -->
+
+    <!-- Application Structure Plan:
+        1. Dashboard (Tổng quan): Radar Chart (Bánh xe cuộc đời), Next Milestones.
+        2. Sự Nghiệp (Career): OKRs Q1 & Q2, Roadmap Dự án FitLife, Biểu đồ kỹ năng.
+        3. Sức Khỏe (Health): Lịch trình 3 Phase, Thời gian biểu tập luyện, Dinh dưỡng.
+        4. Phát Triển (Growth): Lộ trình đọc sách, Second Brain (PARA), Thói quen.
+        5. Tài Chính & Học Tập (Finance & Study): Lịch học FPT, Kế hoạch tài chính.
+        Structure chosen to separate concerns while maintaining a holistic view.
+    -->
+
+    <!-- Visualization & Content Choices:
+        - Dashboard: Radar Chart (Chart.js) -> Goal: Visualize balance across life areas.
+        - Career: Interactive Accordion for OKRs -> Goal: Manage complex hierarchical data (O -> KR -> Action).
+        - Project FitLife: Kanban-style board (CSS Grid) -> Goal: Visualize project phases.
+        - Health: Interactive Weekly Schedule (Grid) -> Goal: Clear daily action plan.
+        - Reading: Timeline/List view -> Goal: Track consumption over time.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #F9FAFB; color: #1F2937; }
+        .nav-item.active { background-color: #E5E7EB; border-left: 4px solid #4B5563; font-weight: 600; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        .phase-card { transition: all 0.3s ease; }
+        .phase-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .hidden-section { display: none; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-64 bg-white border-r border-gray-200 flex-shrink-0 flex flex-col h-full z-10 shadow-sm">
+        <div class="p-6 border-b border-gray-100 flex items-center justify-center bg-gray-50">
+            <h1 class="text-2xl font-bold tracking-tight text-gray-800"><i class="fas fa-cubes mr-2"></i>LifeOS</h1>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+            <button onclick="showSection('dashboard')" id="nav-dashboard" class="nav-item w-full text-left px-6 py-3 text-gray-600 hover:bg-gray-50 transition-colors flex items-center active">
+                <i class="fas fa-tachometer-alt w-6 text-center mr-2"></i> Tổng Quan
+            </button>
+            <button onclick="showSection('career')" id="nav-career" class="nav-item w-full text-left px-6 py-3 text-gray-600 hover:bg-gray-50 transition-colors flex items-center">
+                <i class="fas fa-laptop-code w-6 text-center mr-2"></i> Sự Nghiệp (Java Dev)
+            </button>
+            <button onclick="showSection('health')" id="nav-health" class="nav-item w-full text-left px-6 py-3 text-gray-600 hover:bg-gray-50 transition-colors flex items-center">
+                <i class="fas fa-dumbbell w-6 text-center mr-2"></i> Sức Khỏe & Body
+            </button>
+            <button onclick="showSection('growth')" id="nav-growth" class="nav-item w-full text-left px-6 py-3 text-gray-600 hover:bg-gray-50 transition-colors flex items-center">
+                <i class="fas fa-brain w-6 text-center mr-2"></i> Phát Triển & Sách
+            </button>
+            <button onclick="showSection('finance')" id="nav-finance" class="nav-item w-full text-left px-6 py-3 text-gray-600 hover:bg-gray-50 transition-colors flex items-center">
+                <i class="fas fa-wallet w-6 text-center mr-2"></i> Tài Chính & Lịch
+            </button>
+        </nav>
+        <div class="p-4 border-t border-gray-100 bg-gray-50">
+            <div class="flex items-center">
+                <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-bold">ME</div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-900">User</p>
+                    <p class="text-xs text-gray-500">Java Fresher to be</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8" id="main-content">
+        
+        <!-- SECTION: DASHBOARD -->
+        <section id="dashboard" class="space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Bảng Điều Khiển Trung Tâm</h2>
+                <p class="text-gray-600">Tổng quan về trạng thái hiện tại dựa trên đánh giá cá nhân và mục tiêu ngắn hạn.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Wheel of Life Chart -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-chart-pie mr-2 text-indigo-600"></i> Bánh Xe Cuộc Đời (Hiện tại)</h3>
+                    <div class="chart-container">
+                        <canvas id="wheelOfLifeChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-500 text-center italic">
+                        *Điểm số dựa trên đánh giá ngày 1: Sự nghiệp 2, Sức khỏe 5, Mối quan hệ 7...
+                    </div>
+                </div>
+
+                <!-- Priority Focus -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center"><i class="fas fa-bullseye mr-2 text-red-600"></i> Tiêu Điểm Ưu Tiên (Quý 1)</h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                <h4 class="font-bold text-blue-900">1. Sự Nghiệp & Học Tập</h4>
+                                <p class="text-sm text-blue-800 mt-1">Hoàn thành Kỳ 5 & 6 FPT Poly. Xây dựng dự án <strong>FitLife Ecosystem</strong>. Thành thạo Java Spring Boot.</p>
+                            </div>
+                            <div class="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                <h4 class="font-bold text-green-900">2. Sức Khỏe (Body Recomposition)</h4>
+                                <p class="text-sm text-green-800 mt-1">Giảm 4-6kg mỡ, phục hồi cơ bắp đón Tết. Tuân thủ nguyên tắc 80/20.</p>
+                            </div>
+                            <div class="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                                <h4 class="font-bold text-yellow-900">3. Kỷ Luật & Tư Duy</h4>
+                                <p class="text-sm text-yellow-800 mt-1">Xây dựng "Bộ não thứ hai". Đọc 6 cuốn sách nền tảng. Thiết lập thói quen nguyên tử.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-gray-100">
+                        <h4 class="font-semibold text-gray-700 mb-2">Đếm ngược đến Tết Nguyên Đán (Ất Tỵ)</h4>
+                        <div class="w-full bg-gray-200 rounded-full h-4">
+                            <div class="bg-red-500 h-4 rounded-full" style="width: 35%"></div>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>01/12/2025</span>
+                            <span>Mục tiêu: Body đẹp + Kiến thức vững</span>
+                            <span>17/02/2026</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: CAREER -->
+        <section id="career" class="hidden-section space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Lộ Trình Sự Nghiệp: Java Backend Fresher</h2>
+                <p class="text-gray-600">Kế hoạch chi tiết để chuyển từ sinh viên năm cuối sang lập trình viên chuyên nghiệp thông qua dự án FitLife Ecosystem.</p>
+            </div>
+
+            <!-- OKRs View -->
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                <!-- OKR Column -->
+                <div class="xl:col-span-2 space-y-6">
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+                        <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center">
+                            <h3 class="text-white font-bold text-lg">OKRs Quý 1 (T12/2025 - T2/2026)</h3>
+                            <span class="bg-indigo-500 text-xs text-white px-2 py-1 rounded">Focus: Nền Tảng & Dự Án</span>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <!-- Objective 1 -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="font-bold text-gray-800 text-lg mb-2">O1: Xây dựng nền tảng kỹ thuật vững chắc (Java Core, DB, Spring Boot)</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-start">
+                                        <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded mt-1 mr-3">KR1</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Hoàn thành thiết kế DB chuẩn 3NF và 100% API cơ bản cho FitLife</p>
+                                            <p class="text-xs text-gray-500">Deadline: 31/12/2025 | Action: Học lại Normalization, vẽ ERD.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded mt-1 mr-3">KR2</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Thành thạo Spring Security & JWT Authentication</p>
+                                            <p class="text-xs text-gray-500">Deadline: 15/01/2026 | Action: Code module Auth phân quyền (Admin/User/Coach).</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Objective 2 -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="font-bold text-gray-800 text-lg mb-2">O2: Hoàn thành Dự án FitLife (MVP) & Sẵn sàng CV</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-start">
+                                        <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded mt-1 mr-3">KR1</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Deploy thành công FitLife lên Cloud (Render/Railway) với Docker</p>
+                                            <p class="text-xs text-gray-500">Deadline: 28/02/2026 | Tech: Docker Compose, CI/CD basic.</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded mt-1 mr-3">KR2</span>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Hoàn thiện CV và Mock Interview đạt 8/10 điểm tự đánh giá</p>
+                                            <p class="text-xs text-gray-500">Deadline: 15/02/2026 | Action: Viết CV theo STAR model, luyện giải thuật.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                     <!-- FitLife Project Specs -->
+                     <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">FitLife Ecosystem Specs</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-sm text-gray-700 mb-2">Core Tech Stack</h4>
+                                <ul class="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                                    <li>Java 17 & Spring Boot 3</li>
+                                    <li>MySQL (Database)</li>
+                                    <li>Redis (Caching & Leaderboard)</li>
+                                    <li>Docker (Containerization)</li>
+                                    <li>ReactJS/Thymeleaf (Frontend)</li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <h4 class="font-bold text-sm text-gray-700 mb-2">Key Modules</h4>
+                                <ul class="text-sm text-gray-600 space-y-1 list-disc list-inside">
+                                    <li><strong>Bio-Core:</strong> Tính TDEE/BMR</li>
+                                    <li><strong>Booking:</strong> Xử lý Concurrency</li>
+                                    <li><strong>Gamification:</strong> Streak & Rank</li>
+                                    <li><strong>Payment:</strong> VNPay Integration</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skill Chart -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 h-fit">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Đánh Giá Kỹ Năng</h3>
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="skillChart"></canvas>
+                    </div>
+                    <div class="mt-4 space-y-3">
+                        <h4 class="text-sm font-bold text-gray-700">Mục tiêu phát triển T-Shaped:</h4>
+                        <div class="text-xs text-gray-600">
+                            <p class="mb-1"><span class="font-bold text-indigo-600">Deep (Sâu):</span> Java Backend (Spring, DB, API).</p>
+                            <p><span class="font-bold text-indigo-600">Broad (Rộng):</span> DevOps cơ bản, Frontend cơ bản, Kỹ năng mềm.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: HEALTH -->
+        <section id="health" class="hidden-section space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Kế Hoạch Sức Khỏe & Thể Hình</h2>
+                <p class="text-gray-600">Chiến dịch 11 tuần (78 ngày) Body Recomposition đón Tết. Nguyên tắc: Khoa học - Bền vững - Kỷ luật mềm dẻo.</p>
+            </div>
+
+            <!-- 3 Phases Roadmap -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Phase 1 -->
+                <div class="bg-white border-t-4 border-blue-500 rounded-xl shadow-sm p-5 phase-card">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">Phase 1: Đánh Thức</h3>
+                        <span class="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded">Tuần 1-3</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3">01/12 - 21/12</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li><i class="fas fa-check-circle text-blue-500 mr-2"></i><strong>Tập luyện:</strong> 4 buổi/tuần (Upper/Lower). RPE 6-7.</li>
+                        <li><i class="fas fa-check-circle text-blue-500 mr-2"></i><strong>Dinh dưỡng:</strong> Ăn giữ cân (Maintenance). Không cắt giảm vội.</li>
+                        <li><i class="fas fa-check-circle text-blue-500 mr-2"></i><strong>Mục tiêu:</strong> Kích hoạt thần kinh, tránh đau cơ quá mức.</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 2 -->
+                <div class="bg-white border-t-4 border-green-500 rounded-xl shadow-sm p-5 phase-card transform scale-105 border shadow-md">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">Phase 2: Tăng Tốc & Phì Đại</h3>
+                        <span class="text-xs font-bold bg-green-100 text-green-800 px-2 py-1 rounded">Tuần 4-8</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3">22/12 - 25/01</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li><i class="fas fa-fire text-green-500 mr-2"></i><strong>Tập luyện:</strong> 5-6 buổi/tuần (PPL). RPE 8-9. Tập trung Eccentric.</li>
+                        <li><i class="fas fa-fire text-green-500 mr-2"></i><strong>Dinh dưỡng:</strong> Thâm hụt nhẹ 300kcal. Protein 2.0g/kg.</li>
+                        <li><i class="fas fa-fire text-green-500 mr-2"></i><strong>Mục tiêu:</strong> Tối đa hóa phát triển cơ bắp (Muscle Memory).</li>
+                    </ul>
+                </div>
+
+                <!-- Phase 3 -->
+                <div class="bg-white border-t-4 border-red-500 rounded-xl shadow-sm p-5 phase-card">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-bold text-gray-800">Phase 3: Cắt Nét (Sprint)</h3>
+                        <span class="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded">Tuần 9-11</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3">26/01 - 15/02</p>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li><i class="fas fa-running text-red-500 mr-2"></i><strong>Tập luyện:</strong> Giữ khối lượng, tăng Cardio LISS sau tập.</li>
+                        <li><i class="fas fa-running text-red-500 mr-2"></i><strong>Dinh dưỡng:</strong> Cắt giảm Carb, tăng rau. Cắt đường hoàn toàn.</li>
+                        <li><i class="fas fa-running text-red-500 mr-2"></i><strong>Mục tiêu:</strong> Giảm mỡ tối đa để lộ cơ đón Tết.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Weekly Schedule Interactive -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Lịch Trình Tuần Mẫu (Phase 1)</h3>
+                    <div class="text-sm text-gray-500">
+                        <i class="fas fa-info-circle"></i> Nhấp vào ngày để xem chi tiết
+                    </div>
+                </div>
+                <div class="grid grid-cols-7 gap-2 text-center text-sm font-medium text-gray-600 mb-2">
+                    <div>T2</div>
+                    <div>T3</div>
+                    <div>T4</div>
+                    <div>T5</div>
+                    <div>T6</div>
+                    <div>T7</div>
+                    <div>CN</div>
+                </div>
+                <div class="grid grid-cols-7 gap-2" id="calendar-grid">
+                    <!-- JS will populate buttons -->
+                </div>
+                <div id="workout-detail" class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+                    <h4 class="font-bold text-gray-800 mb-2" id="detail-title">Upper Body A</h4>
+                    <p class="text-sm text-gray-600" id="detail-desc">Bench Press, Row, Overhead Press. 3 sets x 10 reps. RPE 6.</p>
+                </div>
+            </div>
+            
+            <!-- Rules -->
+             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Quy Tắc Vàng (Khoa Học)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-start">
+                         <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mr-3">1</div>
+                         <div>
+                             <h4 class="font-bold text-gray-900">Không "Junk Volume"</h4>
+                             <p class="text-sm text-gray-600">Chỉ 10-12 "Hard Sets" mỗi nhóm cơ/tuần. Tập xong trong 45-60p. Dành sức học.</p>
+                         </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mr-3">2</div>
+                        <div>
+                            <h4 class="font-bold text-gray-900">Giấc Ngủ 10-3-2-1-0</h4>
+                            <p class="text-sm text-gray-600">10h trước ngủ ngưng Cafe, 3h ngưng ăn, 2h ngưng việc, 1h ngưng điện thoại.</p>
+                        </div>
+                   </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: GROWTH -->
+        <section id="growth" class="hidden-section space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Phát Triển & Tư Duy</h2>
+                <p class="text-gray-600">Xây dựng "Bộ não thứ hai" (Second Brain) và nạp kiến thức nền tảng.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Reading List -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-book mr-2 text-amber-600"></i> Lộ Trình Đọc Sách</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-amber-50 rounded border border-amber-100">
+                            <div>
+                                <h4 class="font-bold text-gray-800">Atomic Habits (Thói quen nguyên tử)</h4>
+                                <p class="text-xs text-gray-600">Giai đoạn: Tuần 1-3 | Lý do: Xây dựng Identity.</p>
+                            </div>
+                            <span class="text-xs bg-amber-200 text-amber-800 px-2 py-1 rounded font-bold">Priority 1</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+                            <div>
+                                <h4 class="font-bold text-gray-800">Càng kỷ luật càng tự do</h4>
+                                <p class="text-xs text-gray-600">Giai đoạn: Tuần 4 | Lý do: Củng cố "Tại sao".</p>
+                            </div>
+                            <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Priority 2</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+                            <div>
+                                <h4 class="font-bold text-gray-800">Giải mã hoocmon Dopamine</h4>
+                                <p class="text-xs text-gray-600">Giai đoạn: Tháng 12 | Lý do: Hiểu kẻ thù gốc rễ.</p>
+                            </div>
+                            <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded">Priority 3</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200">
+                            <div>
+                                <h4 class="font-bold text-gray-800">Clean Code</h4>
+                                <p class="text-xs text-gray-600">Giai đoạn: Q1/2026 | Lý do: Kỹ thuật chuyên sâu.</p>
+                            </div>
+                            <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Tech</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Second Brain Setup -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-folder-tree mr-2 text-purple-600"></i> Cấu Trúc P.A.R.A (Notion/Obsidian)</h3>
+                    <div class="space-y-4">
+                        <div class="p-3 border-l-4 border-purple-500 bg-purple-50">
+                            <h4 class="font-bold text-purple-900">1. Projects (Dự án)</h4>
+                            <p class="text-sm text-purple-800">Việc có deadline, cần làm xong sớm.</p>
+                            <p class="text-xs mt-1 text-gray-600"><i>VD: FitLife App, Thi cuối kỳ 4, Body 6 múi.</i></p>
+                        </div>
+                        <div class="p-3 border-l-4 border-blue-400 bg-blue-50">
+                            <h4 class="font-bold text-blue-900">2. Areas (Lĩnh vực)</h4>
+                            <p class="text-sm text-blue-800">Trách nhiệm dài hạn, không có deadline.</p>
+                            <p class="text-xs mt-1 text-gray-600"><i>VD: Sức khỏe, Tài chính, Coding Skill.</i></p>
+                        </div>
+                        <div class="p-3 border-l-4 border-green-400 bg-green-50">
+                            <h4 class="font-bold text-green-900">3. Resources (Tài nguyên)</h4>
+                            <p class="text-sm text-green-800">Kiến thức, tài liệu muốn lưu trữ.</p>
+                            <p class="text-xs mt-1 text-gray-600"><i>VD: Java Docs, Fitness Tips, Book notes.</i></p>
+                        </div>
+                        <div class="p-3 border-l-4 border-gray-400 bg-gray-50">
+                            <h4 class="font-bold text-gray-900">4. Archives (Lưu trữ)</h4>
+                            <p class="text-sm text-gray-800">Những gì đã xong hoặc không còn dùng.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: FINANCE & SCHEDULE -->
+        <section id="finance" class="hidden-section space-y-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Tài Chính & Lịch Trình Học Tập</h2>
+                <p class="text-gray-600">Quản lý các mốc thời gian quan trọng và nền tảng tài chính cá nhân.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Academic Schedule -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Lịch Trình FPT Polytechnic</h3>
+                    <div class="relative pl-6 border-l-2 border-gray-200 space-y-6">
+                        <div class="relative">
+                            <span class="absolute -left-[33px] bg-red-500 h-4 w-4 rounded-full border-2 border-white"></span>
+                            <h4 class="font-bold text-gray-900">Hiện tại: Nước rút Kỳ 4</h4>
+                            <p class="text-xs text-gray-500">Nay - 14/12/2025</p>
+                            <p class="text-sm text-gray-700 mt-1">Thi Final / Bảo vệ Assignment. Không được nợ môn.</p>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -left-[33px] bg-gray-300 h-4 w-4 rounded-full border-2 border-white"></span>
+                            <h4 class="font-bold text-gray-900">Nghỉ Giao Kỳ</h4>
+                            <p class="text-xs text-gray-500">15/12 - 21/12/2025</p>
+                            <p class="text-sm text-gray-700 mt-1">Nạp năng lượng. Chuẩn bị kiến thức Kỳ 5.</p>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -left-[33px] bg-blue-500 h-4 w-4 rounded-full border-2 border-white"></span>
+                            <h4 class="font-bold text-gray-900">Kỳ 5: Chuyên ngành hẹp</h4>
+                            <p class="text-xs text-gray-500">22/12/2025 - 08/02/2026</p>
+                            <p class="text-sm text-gray-700 mt-1">Học Block duy nhất trước Tết. Hoàn thành trước 21 tháng Chạp.</p>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -left-[33px] bg-green-500 h-4 w-4 rounded-full border-2 border-white"></span>
+                            <h4 class="font-bold text-gray-900">Kỳ 6: Thực tập & Tốt nghiệp</h4>
+                            <p class="text-xs text-gray-500">23/02/2026 - 03/05/2026</p>
+                            <p class="text-sm text-gray-700 mt-1">Vừa thực tập doanh nghiệp, vừa làm đồ án tốt nghiệp.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Foundation -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Chiến Lược Tài Chính (T-Shaped Career)</h3>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-bold text-sm text-gray-700 mb-2">Trạng thái hiện tại:</h4>
+                        <ul class="list-disc list-inside text-sm text-gray-600">
+                            <li>Phụ thuộc: Mẹ chu cấp.</li>
+                            <li>Nợ: 4.000.000 VNĐ.</li>
+                            <li>Điểm tài chính: 2/10.</li>
+                        </ul>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold text-gray-800 text-sm mb-1">Bước 1: Quản lý dòng tiền</h4>
+                            <p class="text-xs text-gray-600">Ghi chép chi tiêu hàng ngày. Cắt giảm ăn ngoài. Dùng app Money Lover/Excel.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold text-gray-800 text-sm mb-1">Bước 2: Đầu tư kiến thức (Quan trọng nhất)</h4>
+                            <p class="text-xs text-gray-600">Chưa cần đầu tư tiền. Đầu tư thời gian học Java để có mức lương khởi điểm cao.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h4 class="font-bold text-gray-800 text-sm mb-1">Bước 3: Trả nợ & Tích lũy (Sau khi đi làm)</h4>
+                            <p class="text-xs text-gray-600">Trích 20% lương tháng đầu tiên trả nợ. Mua chứng chỉ quỹ (DCA) khi có thu nhập ổn định.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Data Storage
+        const appData = {
+            scores: {
+                health: 5,
+                career: 2,
+                finance: 2,
+                relationship: 7,
+                growth: 4,
+                fun: 4,
+                environment: 7,
+                spirit: 2
+            },
+            skills: {
+                java: { current: 40, target: 85 },
+                spring: { current: 20, target: 80 },
+                db: { current: 30, target: 75 },
+                frontend: { current: 30, target: 60 },
+                english: { current: 30, target: 65 }
+            },
+            workoutSchedule: {
+                'mon': { title: 'Thứ 2: Upper Body A', desc: 'Bench Press, Row, Overhead Press, Pull down. 3 sets x 10 reps. RPE 6.' },
+                'tue': { title: 'Thứ 3: Lower Body A', desc: 'Squat, RDL, Leg Press. 3 sets x 10 reps. RPE 6.' },
+                'wed': { title: 'Thứ 4: Nghỉ ngơi tích cực', desc: 'Đi bộ 30p hoặc giãn cơ. Tập trung học Code.' },
+                'thu': { title: 'Thứ 5: Upper Body B', desc: 'Tập trung tạ đơn, tay, vai. RPE 7.' },
+                'fri': { title: 'Thứ 6: Lower Body B', desc: 'Lunge, Leg Ext, Calf. RPE 7.' },
+                'sat': { title: 'Thứ 7: Cardio & Core', desc: 'Cardio LISS 30p + Bụng. Bơm máu nhẹ nhàng.' },
+                'sun': { title: 'Chủ Nhật: Meal Prep & Ngủ', desc: 'Chuẩn bị đồ ăn cho tuần sau. Ngủ bù đủ 8 tiếng.' }
+            }
+        };
+
+        // Navigation Logic
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden-section'));
+            // Remove active class from nav
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.remove('hidden-section');
+            // Add active class to selected nav
+            document.getElementById('nav-' + sectionId).classList.add('active');
+        }
+
+        // Initialize Charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Wheel of Life Chart
+            const ctxWheel = document.getElementById('wheelOfLifeChart').getContext('2d');
+            new Chart(ctxWheel, {
+                type: 'radar',
+                data: {
+                    labels: ['Sức Khỏe', 'Sự Nghiệp', 'Tài Chính', 'Mối Quan Hệ', 'Phát Triển', 'Giải Trí', 'Môi Trường', 'Tâm Linh'],
+                    datasets: [{
+                        label: 'Điểm Hiện Tại',
+                        data: [5, 2, 2, 7, 4, 4, 7, 2],
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Mục Tiêu Q1',
+                        data: [7, 6, 4, 8, 6, 5, 8, 5],
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderColor: 'rgba(16, 185, 129, 0.6)',
+                        pointBackgroundColor: 'rgba(16, 185, 129, 0.6)',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { display: true },
+                            suggestedMin: 0,
+                            suggestedMax: 10,
+                            ticks: { stepSize: 2 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // 2. Skill Chart
+            const ctxSkill = document.getElementById('skillChart').getContext('2d');
+            new Chart(ctxSkill, {
+                type: 'bar',
+                data: {
+                    labels: ['Java Core', 'Spring Boot', 'Database (SQL)', 'Frontend (React)', 'Tiếng Anh'],
+                    datasets: [
+                        {
+                            label: 'Hiện tại (%)',
+                            data: [40, 20, 30, 30, 30],
+                            backgroundColor: '#9CA3AF'
+                        },
+                        {
+                            label: 'Mục tiêu Đi làm (%)',
+                            data: [85, 80, 75, 60, 65],
+                            backgroundColor: '#4F46E5'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                footer: function(tooltipItems) {
+                                    const index = tooltipItems[0].dataIndex;
+                                    const tips = [
+                                        "OOP, Collection, Stream API",
+                                        "DI, IoC, JPA, Security",
+                                        "Normalization, Indexing, SQL",
+                                        "Component lifecycle, Hooks",
+                                        "Đọc tài liệu, Giao tiếp cơ bản"
+                                    ];
+                                    return "Focus: " + tips[index];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize Calendar Grid
+            const days = [
+                { id: 'mon', label: 'T2' }, { id: 'tue', label: 'T3' }, { id: 'wed', label: 'T4' },
+                { id: 'thu', label: 'T5' }, { id: 'fri', label: 'T6' }, { id: 'sat', label: 'T7' }, { id: 'sun', label: 'CN' }
+            ];
+            const gridContainer = document.getElementById('calendar-grid');
+            
+            days.forEach((day, index) => {
+                const btn = document.createElement('button');
+                btn.className = `p-3 rounded-lg border text-sm font-bold transition-colors ${index === 0 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`;
+                btn.textContent = day.label;
+                btn.onclick = () => selectDay(btn, day.id);
+                gridContainer.appendChild(btn);
+            });
+        });
+
+        // Interactive Functions
+        function selectDay(btnElement, dayId) {
+            // Reset styles
+            const buttons = document.getElementById('calendar-grid').children;
+            for (let btn of buttons) {
+                btn.className = 'p-3 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-bold hover:bg-gray-50 transition-colors';
+            }
+            // Set active style
+            btnElement.className = 'p-3 rounded-lg border border-indigo-600 bg-indigo-600 text-white text-sm font-bold shadow-md transform scale-105 transition-all';
+
+            // Update Content
+            const info = appData.workoutSchedule[dayId];
+            const detailDiv = document.getElementById('workout-detail');
+            document.getElementById('detail-title').textContent = info.title;
+            document.getElementById('detail-desc').textContent = info.desc;
+            detailDiv.classList.remove('hidden');
+            detailDiv.classList.add('animate-fade-in');
+        }
+
+    </script>
+</body>
+</html>

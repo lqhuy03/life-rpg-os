@@ -1,0 +1,51 @@
+{
+  "user_profile": {
+    "role": "Java Backend Fresher (Future)",
+    "current_status": "Student @ FPT Polytechnic",
+    "graduation_date": "05/2026",
+    "scores": {
+      "health": 5,
+      "career": 2,
+      "finance": 2,
+      "relationships": 7,
+      "growth": 4,
+      "fun": 4,
+      "environment": 7,
+      "spirit": 2
+    }
+  },
+  "okrs_q1": [
+    {
+      "objective": "Xây dựng nền tảng kỹ thuật vững chắc",
+      "key_results": [
+        "Hoàn thành thiết kế DB chuẩn 3NF",
+        "100% API cơ bản cho FitLife",
+        "Thành thạo Spring Security & JWT"
+      ]
+    },
+    {
+      "objective": "Hoàn thành Dự án FitLife (MVP) & Sẵn sàng CV",
+      "key_results": [
+        "Deploy thành công FitLife lên Cloud",
+        "Hoàn thiện CV và Mock Interview đạt 8/10"
+      ]
+    }
+  ],
+  "health_plan": {
+    "phase_1": {
+      "name": "Đánh Thức",
+      "duration": "Tuần 1-3",
+      "focus": "Kích hoạt thần kinh, Maintenance Calories"
+    },
+    "phase_2": {
+      "name": "Tăng Tốc & Phì Đại",
+      "duration": "Tuần 4-8",
+      "focus": "Hypertrophy, Thâm hụt nhẹ 300kcal"
+    },
+    "phase_3": {
+      "name": "Cắt Nét",
+      "duration": "Tuần 9-11",
+      "focus": "Cardio LISS, Cắt giảm Carb"
+    }
+  }
+}
